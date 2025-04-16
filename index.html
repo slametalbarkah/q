@@ -49,9 +49,15 @@
             padding: 15px;
             border-radius: 5px;
             margin-top: 10px;
+            min-height: 50px;
         }
         #quantum-chart {
             margin-top: 20px;
+            max-height: 300px;
+        }
+        .loading {
+            color: #6e48aa;
+            font-style: italic;
         }
     </style>
 </head>
@@ -62,73 +68,119 @@
         <!-- AI Chat Section -->
         <div class="section">
             <h2>Generative AI (Simulated)</h2>
-            <textarea id="ai-prompt" placeholder="Ask me anything..."></textarea>
-            <button py-click="ask_ai()" id="ai-button">Generate</button>
+            <textarea id="ai-prompt" placeholder="Ask me about: quantum, python, or hello..."></textarea>
+            <button id="ai-button">Generate</button>
             <div id="ai-response" class="response-box"></div>
         </div>
 
         <!-- Quantum Simulator -->
         <div class="section">
             <h2>Quantum Simulator</h2>
-            <button py-click="run_quantum()" id="quantum-button">Run Quantum Circuit</button>
+            <button id="quantum-button">Run Quantum Circuit</button>
             <div id="quantum-result" class="response-box"></div>
-            <canvas id="quantum-chart"></canvas>
+            <canvas id="quantum-chart" width="400" height="200"></canvas>
         </div>
     </div>
 
     <py-config>
-        packages = ["numpy", "matplotlib", "qiskit"]
+        packages = ["numpy", "qiskit"]
     </py-config>
 
     <py-script>
+        from js import document, console, Chart, setTimeout
+        from pyodide.ffi import create_proxy
         import numpy as np
         from qiskit import QuantumCircuit, Aer, execute
-        import matplotlib.pyplot as plt
-        from js import document, console, Chart
 
-        # Simulated AI (Replace with OpenAI API if needed)
-        def ask_ai():
+        # ===== AI SECTION =====
+        def ask_ai(*args):
             prompt = document.getElementById("ai-prompt").value
+            response_box = document.getElementById("ai-response")
+            response_box.innerHTML = "<span class='loading'>Thinking...</span>"
+            
+            # Simulate delay for realism
+            setTimeout(create_proxy(lambda: show_ai_response(prompt)), 1000)
+
+        def show_ai_response(prompt):
             responses = {
-                "hello": "Hello! I'm a simulated AI.",
-                "quantum": "Quantum computing uses qubits that can be 0 and 1 simultaneously.",
-                "python": "Python is great for AI and quantum programming!"
+                "hello": "Hello! I'm a simulated AI. Try asking about 'quantum' or 'python'!",
+                "quantum": "Quantum computing uses qubits that can be in superposition (0 and 1 simultaneously). This demo shows entangled qubits.",
+                "python": "Python is the best language for AI and quantum programming! PyScript lets you run Python directly in browsers.",
+                "error": "I understand: 'hello', 'quantum', 'python'. Try one of these!"
             }
-            answer = responses.get(prompt.lower(), "I don't understand that yet. Try 'hello', 'quantum', or 'python'.")
+            
+            prompt_lower = prompt.lower()
+            answer = responses["error"]
+            if "hello" in prompt_lower:
+                answer = responses["hello"]
+            elif "quantum" in prompt_lower:
+                answer = responses["quantum"]
+            elif "python" in prompt_lower:
+                answer = responses["python"]
+                
             document.getElementById("ai-response").innerHTML = answer
 
-        # Real Quantum Simulator
-        def run_quantum():
-            # Create quantum circuit
-            qc = QuantumCircuit(2)
-            qc.h(0)  # Hadamard gate
-            qc.cx(0, 1)  # Entangle qubits
-            qc.measure_all()
-
-            # Simulate
-            simulator = Aer.get_backend('qasm_simulator')
-            result = execute(qc, simulator, shots=1000).result()
-            counts = result.get_counts(qc)
-
-            # Display results
-            document.getElementById("quantum-result").innerHTML = f"Results: {counts}"
-
-            # Draw chart
-            ctx = document.getElementById('quantum-chart').getContext('2d')
-            labels = list(counts.keys())
-            data = list(counts.values())
+        # ===== QUANTUM SECTION =====
+        def run_quantum(*args):
+            result_box = document.getElementById("quantum-result")
+            result_box.innerHTML = "<span class='loading'>Calculating quantum states...</span>"
             
-            new Chart(ctx, {
-                "type": "bar",
-                "data": {
-                    "labels": labels,
-                    "datasets": [{
-                        "label": "Qubit States",
-                        "data": data,
-                        "backgroundColor": ["#ff6384", "#36a2eb"]
-                    }]
-                }
-            })
+            setTimeout(create_proxy(lambda: execute_quantum_circuit()), 500)
+
+        def execute_quantum_circuit():
+            try:
+                # Create quantum circuit
+                qc = QuantumCircuit(2)
+                qc.h(0)  # Hadamard gate
+                qc.cx(0, 1)  # Entangle qubits
+                qc.measure_all()
+
+                # Simulate
+                simulator = Aer.get_backend('aer_simulator')
+                result = execute(qc, simulator, shots=1024).result()
+                counts = result.get_counts(qc)
+                
+                # Display results
+                document.getElementById("quantum-result").innerHTML = (
+                    f"<strong>Quantum Circuit Results:</strong><br>"
+                    f"00: {counts.get('00', 0)} counts<br>"
+                    f"11: {counts.get('11', 0)} counts"
+                )
+
+                # Draw chart
+                ctx = document.getElementById("quantum-chart").getContext("2d")
+                if hasattr(ctx, "chart"):
+                    ctx.chart.destroy()
+                
+                ctx.chart = new Chart(ctx, {
+                    "type": "bar",
+                    "data": {
+                        "labels": ["00", "11"],
+                        "datasets": [{
+                            "label": "Measurement Counts",
+                            "data": [counts.get("00", 0), counts.get("11", 0)],
+                            "backgroundColor": ["#ff6384", "#36a2eb"]
+                        }]
+                    },
+                    "options": {
+                        "responsive": true,
+                        "scales": {
+                            "y": { "beginAtZero": True }
+                        }
+                    }
+                })
+                
+            except Exception as e:
+                document.getElementById("quantum-result").innerHTML = f"Error: {str(e)}"
+                console.error(f"Quantum error: {str(e)}")
+
+        # ===== EVENT LISTENERS =====
+        def setup():
+            document.getElementById("ai-button").addEventListener("click", create_proxy(ask_ai))
+            document.getElementById("quantum-button").addEventListener("click", create_proxy(run_quantum))
+            console.log("App initialized!")
+
+        setTimeout(setup, 1000)  # Wait for PyScript to fully load
     </py-script>
 </body>
 </html>
