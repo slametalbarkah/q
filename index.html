@@ -3,184 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super App AI + Quantum</title>
-    <!-- PyScript -->
-    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
-    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>One Piece Wiki Generator</title>
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            max-width: 1000px;
             margin: 0 auto;
-        }
-        h1 {
-            color: #6e48aa;
-            text-align: center;
-        }
-        .section {
-            background: white;
-            border-radius: 10px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #202122;
+            background-color: #f6f6f6;
         }
-        textarea, button {
-            width: 100%;
+        .generator-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #a2a9b1;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .wiki-header {
+            border-bottom: 1px solid #a2a9b1;
+            margin-bottom: 20px;
+        }
+        .wiki-title {
+            font-family: 'Linux Libertine', 'Georgia', serif;
+            border-bottom: 1px solid #a2a9b1;
+            font-size: 1.8em;
+            color: #000;
+        }
+        .wiki-content {
+            display: flex;
+        }
+        .wiki-main {
+            flex: 1;
+        }
+        .wiki-sidebar {
+            width: 250px;
+            margin-left: 20px;
+            border: 1px solid #a2a9b1;
             padding: 10px;
+            background: #f8f9fa;
+            font-size: 0.875em;
+        }
+        .wiki-infobox-title {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            background: #ccf;
+            padding: 5px;
+            margin: -10px -10px 10px -10px;
+        }
+        .wiki-infobox-image {
+            text-align: center;
             margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+        }
+        .wiki-infobox-image img {
+            max-width: 100%;
+            border: 1px solid #a2a9b1;
+        }
+        .wiki-section {
+            margin-bottom: 25px;
+        }
+        .wiki-section-title {
+            font-size: 1.3em;
+            border-bottom: 1px solid #a2a9b1;
+            padding-bottom: 3px;
+            color: #000;
+        }
+        .wiki-toc {
+            background: #f8f9fa;
+            border: 1px solid #a2a9b1;
+            padding: 10px;
+            display: inline-block;
+            margin-bottom: 20px;
+            float: right;
+            margin-left: 20px;
+        }
+        .wiki-toc-title {
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .wiki-footer {
+            border-top: 1px solid #a2a9b1;
+            margin-top: 30px;
+            padding-top: 15px;
+            font-size: 0.875em;
+            color: #54595d;
+        }
+        select, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 3px;
+            font-size: 0.95em;
+        }
+        select {
+            width: 200px;
+            border: 1px solid #a2a9b1;
         }
         button {
-            background: #6e48aa;
+            background: #36c;
             color: white;
             border: none;
             cursor: pointer;
+            transition: background 0.2s;
         }
-        .response-box {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 10px;
-            min-height: 50px;
+        button:hover {
+            background: #447ff5;
         }
-        #quantum-chart {
-            margin-top: 20px;
-            max-height: 300px;
+        .character-selector {
+            margin-bottom: 15px;
+        }
+        .export-buttons {
+            margin-top: 15px;
         }
         .loading {
-            color: #6e48aa;
+            color: #36c;
             font-style: italic;
+        }
+        @media (max-width: 768px) {
+            .wiki-content {
+                flex-direction: column;
+            }
+            .wiki-sidebar {
+                width: auto;
+                margin-left: 0;
+                margin-top: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>✨ All-in-One AI + Quantum App ✨</h1>
-        
-        <!-- AI Chat Section -->
-        <div class="section">
-            <h2>Generative AI (Simulated)</h2>
-            <textarea id="ai-prompt" placeholder="Ask me about: quantum, python, or hello..."></textarea>
-            <button id="ai-button">Generate</button>
-            <div id="ai-response" class="response-box"></div>
+    <div class="generator-panel">
+        <h2>One Piece Wiki Generator</h2>
+        <div class="character-selector">
+            <select id="character-select">
+                <option value="luffy">Monkey D. Luffy</option>
+                <option value="zoro">Roronoa Zoro</option>
+                <option value="nami">Nami</option>
+                <option value="sanji">Sanji</option>
+                <option value="usopp">Usopp</option>
+                <option value="chopper">Tony Tony Chopper</option>
+                <option value="robin">Nico Robin</option>
+                <option value="franky">Franky</option>
+                <option value="brook">Brook</option>
+                <option value="jinbe">Jinbe</option>
+            </select>
+            <button onclick="generateArticle()">Generate Article</button>
         </div>
-
-        <!-- Quantum Simulator -->
-        <div class="section">
-            <h2>Quantum Simulator</h2>
-            <button id="quantum-button">Run Quantum Circuit</button>
-            <div id="quantum-result" class="response-box"></div>
-            <canvas id="quantum-chart" width="400" height="200"></canvas>
+        <div class="export-buttons">
+            <button onclick="exportHTML()">Export as HTML</button>
+            <button onclick="exportXML()">Export as XML</button>
         </div>
     </div>
 
-    <py-config>
-        packages = ["numpy", "qiskit"]
-    </py-config>
+    <div class="wiki-header">
+        <h1 class="wiki-title" id="article-title">One Piece Character</h1>
+    </div>
 
-    <py-script>
-        from js import document, console, Chart, setTimeout
-        from pyodide.ffi import create_proxy
-        import numpy as np
-        from qiskit import QuantumCircuit, Aer, execute
+    <div class="wiki-content">
+        <div class="wiki-main">
+            <div class="wiki-toc">
+                <div class="wiki-toc-title">Contents</div>
+                <ol id="toc-list"></ol>
+            </div>
 
-        # ===== AI SECTION =====
-        def ask_ai(*args):
-            prompt = document.getElementById("ai-prompt").value
-            response_box = document.getElementById("ai-response")
-            response_box.innerHTML = "<span class='loading'>Thinking...</span>"
-            
-            # Simulate delay for realism
-            setTimeout(create_proxy(lambda: show_ai_response(prompt)), 1000)
+            <div id="wiki-article-content">
+                <p>Select a character and click "Generate Article".</p>
+            </div>
+        </div>
 
-        def show_ai_response(prompt):
-            responses = {
-                "hello": "Hello! I'm a simulated AI. Try asking about 'quantum' or 'python'!",
-                "quantum": "Quantum computing uses qubits that can be in superposition (0 and 1 simultaneously). This demo shows entangled qubits.",
-                "python": "Python is the best language for AI and quantum programming! PyScript lets you run Python directly in browsers.",
-                "error": "I understand: 'hello', 'quantum', 'python'. Try one of these!"
-            }
-            
-            prompt_lower = prompt.lower()
-            answer = responses["error"]
-            if "hello" in prompt_lower:
-                answer = responses["hello"]
-            elif "quantum" in prompt_lower:
-                answer = responses["quantum"]
-            elif "python" in prompt_lower:
-                answer = responses["python"]
-                
-            document.getElementById("ai-response").innerHTML = answer
+        <div class="wiki-sidebar">
+            <div class="wiki-infobox-title" id="infobox-title">Character</div>
+            <div class="wiki-infobox-image">
+                <img id="character-image" src="https://via.placeholder.com/200x300?text=Character+Image" alt="Character Image">
+            </div>
+            <table id="infobox-table"></table>
+        </div>
+    </div>
 
-        # ===== QUANTUM SECTION =====
-        def run_quantum(*args):
-            result_box = document.getElementById("quantum-result")
-            result_box.innerHTML = "<span class='loading'>Calculating quantum states...</span>"
-            
-            setTimeout(create_proxy(lambda: execute_quantum_circuit()), 500)
+    <div class="wiki-footer">
+        <p>This article was generated using Wikipedia-style formatting. Content is fictional.</p>
+    </div>
 
-        def execute_quantum_circuit():
-            try:
-                # Create quantum circuit
-                qc = QuantumCircuit(2)
-                qc.h(0)  # Hadamard gate
-                qc.cx(0, 1)  # Entangle qubits
-                qc.measure_all()
-
-                # Simulate
-                simulator = Aer.get_backend('aer_simulator')
-                result = execute(qc, simulator, shots=1024).result()
-                counts = result.get_counts(qc)
-                
-                # Display results
-                document.getElementById("quantum-result").innerHTML = (
-                    f"<strong>Quantum Circuit Results:</strong><br>"
-                    f"00: {counts.get('00', 0)} counts<br>"
-                    f"11: {counts.get('11', 0)} counts"
-                )
-
-                # Draw chart
-                ctx = document.getElementById("quantum-chart").getContext("2d")
-                if hasattr(ctx, "chart"):
-                    ctx.chart.destroy()
-                
-                ctx.chart = new Chart(ctx, {
-                    "type": "bar",
-                    "data": {
-                        "labels": ["00", "11"],
-                        "datasets": [{
-                            "label": "Measurement Counts",
-                            "data": [counts.get("00", 0), counts.get("11", 0)],
-                            "backgroundColor": ["#ff6384", "#36a2eb"]
-                        }]
+    <script>
+        // Database karakter One Piece
+        const characters = {
+            luffy: {
+                name: "Monkey D. Luffy",
+                imageUrl: "https://static.wikia.nocookie.net/onepiece/images/6/6d/Monkey_D._Luffy_Anime_Post_Timeskip_Infobox.png",
+                infobox: {
+                    "Japanese Name": "モンキー・D・ルフィ",
+                    "Debut": "Chapter 1, Episode 1",
+                    "Affiliations": "Straw Hat Pirates (Captain)",
+                    "Occupation": "Pirate",
+                    "Bounty": "฿3,000,000,000",
+                    "Age": "19",
+                    "Birthday": "May 5",
+                    "Height": "174 cm (5'8½\")",
+                    "Devil Fruit": "Gomu Gomu no Mi (Rubber Human)",
+                    "Signature Weapon": "His own body (Gear techniques)"
+                },
+                sections: [
+                    {
+                        title: "Background",
+                        content: `<p>Monkey D. Luffy is the founder and captain of the increasingly infamous and powerful Straw Hat Pirates, as well as one of its top fighters. He desires to find the legendary treasure left behind by the late Gol D. Roger and thereby become the Pirate King.</p>`
                     },
-                    "options": {
-                        "responsive": true,
-                        "scales": {
-                            "y": { "beginAtZero": True }
-                        }
+                    {
+                        title: "Abilities",
+                        content: `<p>Luffy ate the Gomu Gomu no Mi, a Devil Fruit that turned his body into rubber. His main fighting style involves stretching his limbs to deliver powerful attacks:</p>
+                        <ul>
+                            <li><b>Gear Second:</b> Accelerates blood flow for enhanced speed</li>
+                            <li><b>Gear Third:</b> Inflates bones for massive attacks</li>
+                            <li><b>Gear Fourth:</b> Combines armament Haki with rubber properties</li>
+                        </ul>`
                     }
-                })
+                ]
+            },
+            zoro: {
+                name: "Roronoa Zoro",
+                imageUrl: "https://static.wikia.nocookie.net/onepiece/images/5/52/Roronoa_Zoro_Anime_Post_Timeskip_Infobox.png",
+                infobox: {
+                    "Japanese Name": "ロロノア・ゾロ",
+                    "Debut": "Chapter 3, Episode 2",
+                    "Affiliations": "Straw Hat Pirates (Combatant)",
+                    "Occupation": "Swordsman, Pirate Hunter",
+                    "Bounty": "฿1,111,000,000",
+                    "Age": "21",
+                    "Birthday": "November 11",
+                    "Height": "181 cm (5'11¼\")",
+                    "Swords": "Wado Ichimonji, Sandai Kitetsu, Enma",
+                    "Style": "Santoryu (Three Sword Style)"
+                },
+                sections: [
+                    {
+                        title: "Background",
+                        content: `<p>Roronoa Zoro is the combatant of the Straw Hat Pirates and one of their two swordsmen. Formerly a bounty hunter, he is the second member to join Luffy's crew and his first mate.</p>
+                        <p>His dream is to become the greatest swordsman in the world, to fulfill a promise he made to his deceased childhood friend Kuina.</p>`
+                    },
+                    {
+                        title: "Abilities",
+                        content: `<p>Zoro is a master of Santoryu (Three Sword Style), wielding three swords simultaneously:</p>
+                        <ul>
+                            <li><b>Wado Ichimonji:</b> White sword of great sentimental value</li>
+                            <li><b>Sandai Kitetsu:</b> Cursed blade with red sheath</li>
+                            <li><b>Enma:</b> Powerful sword that can draw out Haki</li>
+                        </ul>
+                        <p>His signature techniques include Oni Giri and 1080 Pound Phoenix.</p>`
+                    }
+                ]
+            },
+            nami: {
+                name: "Nami",
+                imageUrl: "https://static.wikia.nocookie.net/onepiece/images/6/68/Nami_Anime_Post_Timeskip_Infobox.png",
+                infobox: {
+                    "Japanese Name": "ナミ",
+                    "Debut": "Chapter 8, Episode 1",
+                    "Affiliations": "Straw Hat Pirates (Navigator)",
+                    "Occupation": "Navigator, Thief",
+                    "Bounty": "฿366,000,000",
+                    "Age": "20",
+                    "Birthday": "July 3",
+                    "Height": "170 cm (5'7\")",
+                    "Weapon": "Clima-Tact",
+                    "Specialty": "Meteorology, Cartography"
+                },
+                sections: [
+                    {
+                        title: "Background",
+                        content: `<p>Nami is the navigator of the Straw Hat Pirates. She was formerly a member of the Arlong Pirates and initially joined the Straw Hats to steal their treasure, but eventually became a true member of the crew.</p>
+                        <p>Her dream is to draw a complete map of the world.</p>`
+                    },
+                    {
+                        title: "Abilities",
+                        content: `<p>Nami is a brilliant navigator and weather expert. Her main weapon is the Clima-Tact, which allows her to manipulate weather:</p>
+                        <ul>
+                            <li><b>Thunderbolt Tempo:</b> Creates lightning attacks</li>
+                            <li><b>Cyclone Tempo:</b> Generates powerful wind gusts</li>
+                            <li><b>Mirage Tempo:</b> Creates optical illusions</li>
+                        </ul>`
+                    }
+                ]
+            }
+            // Tambahkan karakter lain di sini...
+        };
+
+        // Generate artikel berdasarkan karakter terpilih
+        function generateArticle() {
+            const selectedChar = document.getElementById('character-select').value;
+            const charData = characters[selectedChar];
+            
+            // Set judul artikel
+            document.getElementById('article-title').textContent = charData.name;
+            document.getElementById('infobox-title').textContent = charData.name;
+            
+            // Set gambar karakter
+            document.getElementById('character-image').src = charData.imageUrl;
+            document.getElementById('character-image').alt = charData.name;
+            
+            // Generate infobox
+            let infoboxHTML = '';
+            for (const [key, value] of Object.entries(charData.infobox)) {
+                infoboxHTML += `<tr><td><b>${key}</b></td><td>${value}</td></tr>`;
+            }
+            document.getElementById('infobox-table').innerHTML = infoboxHTML;
+            
+            // Generate konten artikel
+            let articleHTML = '';
+            let tocHTML = '';
+            
+            charData.sections.forEach((section, index) => {
+                // Tambahkan ke daftar isi
+                tocHTML += `<li><a href="#section-${index}">${section.title}</a></li>`;
                 
-            except Exception as e:
-                document.getElementById("quantum-result").innerHTML = f"Error: {str(e)}"
-                console.error(f"Quantum error: {str(e)}")
+                // Tambahkan section ke artikel
+                articleHTML += `
+                    <div class="wiki-section" id="section-${index}">
+                        <h2 class="wiki-section-title">${section.title}</h2>
+                        ${section.content}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('toc-list').innerHTML = tocHTML;
+            document.getElementById('wiki-article-content').innerHTML = articleHTML;
+        }
 
-        # ===== EVENT LISTENERS =====
-        def setup():
-            document.getElementById("ai-button").addEventListener("click", create_proxy(ask_ai))
-            document.getElementById("quantum-button").addEventListener("click", create_proxy(run_quantum))
-            console.log("App initialized!")
+        // Fungsi ekspor
+        function exportHTML() {
+            const charName = document.getElementById('article-title').textContent;
+            const articleContent = document.getElementById('wiki-article-content').innerHTML;
+            const infoboxContent = document.getElementById('infobox-table').innerHTML;
+            const imageUrl = document.getElementById('character-image').src;
+            
+            const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>${charName} - One Piece Wiki</title>
+    <style>
+        body { font-family: Georgia; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .wiki-title { font-size: 1.8em; border-bottom: 1px solid #a2a9b1; }
+        .wiki-section-title { font-size: 1.3em; border-bottom: 1px solid #a2a9b1; }
+        .wiki-infobox { border: 1px solid #a2a9b1; padding: 10px; background: #f8f9fa; float: right; margin-left: 20px; width: 250px; }
+        .wiki-infobox-title { text-align: center; font-weight: bold; background: #ccf; padding: 5px; margin: -10px -10px 10px -10px; }
+        .wiki-infobox-image { text-align: center; margin: 10px 0; }
+        .wiki-infobox-image img { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <h1 class="wiki-title">${charName}</h1>
+    
+    <div class="wiki-infobox">
+        <div class="wiki-infobox-title">${charName}</div>
+        <div class="wiki-infobox-image"><img src="${imageUrl}" alt="${charName}"></div>
+        <table>${infoboxContent}</table>
+    </div>
+    
+    ${articleContent}
+    
+    <div style="border-top:1px solid #a2a9b1;margin-top:20px;padding-top:10px;font-size:0.875em;">
+        <p>Article generated by One Piece Wiki Generator</p>
+    </div>
+</body>
+</html>
+            `;
+            
+            downloadFile(`${charName.replace(/ /g, '_')}_wiki.html`, html);
+        }
 
-        setTimeout(setup, 1000)  # Wait for PyScript to fully load
-    </py-script>
+        function exportXML() {
+            const charName = document.getElementById('article-title').textContent;
+            const articleContent = document.getElementById('wiki-article-content').innerHTML;
+            const infoboxContent = document.getElementById('infobox-table').innerHTML;
+            
+            const xml = `
+<article>
+    <title>${charName}</title>
+    <infobox>
+        ${infoboxContent.replace(/<td>/g, '<field>').replace(/<\/td>/g, '</field>')
+                      .replace(/<tr>/g, '<item>').replace(/<\/tr>/g, '</item>')
+                      .replace(/<b>/g, '<name>').replace(/<\/b>/g, '</name>')}
+    </infobox>
+    <content>
+        ${articleContent.replace(/<div class="wiki-section"/g, '<section')
+                       .replace(/<\/div>/g, '</section>')
+                       .replace(/<h2 class="wiki-section-title"/g, '<title')}
+    </content>
+</article>
+            `;
+            
+            downloadFile(`${charName.replace(/ /g, '_')}_wiki.xml`, xml);
+        }
+
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Generate artikel Luffy secara default saat halaman dimuat
+        window.onload = generateArticle;
+    </script>
 </body>
 </html>
